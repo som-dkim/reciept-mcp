@@ -1,15 +1,19 @@
+import os
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 
+PORT = int(os.getenv("PORT", "8080"))
+
 mcp = FastMCP(
     name="ReceiptMCP",
-    instructions="ReceiptMCP(영수증MCP) provides tools to analyze receipt text and format spending records.",
+    instructions="ReceiptMCP(영수증MCP) provides tools for receipt parsing and spending records.",
     host="0.0.0.0",
-    port=8000,
+    port=PORT,
     stateless_http=True,
+    json_response=True,
 )
 
 
@@ -27,13 +31,14 @@ mcp = FastMCP(
 def health_check() -> dict[str, Any]:
     return {
         "status": "ok",
-        "service": "ReceiptMCP(영수증MCP)",
+        "service": "ReceiptMCP",
+        "port": PORT,
     }
 
 
 @mcp.tool(
     name="analyze_receipt_text",
-    description="Extracts simple receipt information from plain text for ReceiptMCP(영수증MCP).",
+    description="Parses plain receipt text into simple structured rows for ReceiptMCP(영수증MCP).",
     annotations=ToolAnnotations(
         title="Analyze Receipt Text",
         readOnlyHint=True,
@@ -56,13 +61,12 @@ def analyze_receipt_text(receipt_text: str) -> dict[str, Any]:
             }
             for index, line in enumerate(lines)
         ],
-        "message": "Receipt text was parsed into simple structured rows.",
     }
 
 
 @mcp.tool(
     name="format_receipt_table",
-    description="Formats receipt items as a compact markdown table for ReceiptMCP(영수증MCP).",
+    description="Formats receipt text as a markdown table for ReceiptMCP(영수증MCP).",
     annotations=ToolAnnotations(
         title="Format Receipt Table",
         readOnlyHint=True,
@@ -90,4 +94,5 @@ def format_receipt_table(receipt_text: str) -> str:
 
 
 if __name__ == "__main__":
+    print(f"Starting ReceiptMCP on 0.0.0.0:{PORT}", flush=True)
     mcp.run(transport="streamable-http")
